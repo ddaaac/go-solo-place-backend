@@ -10,9 +10,10 @@ import (
 )
 
 type Trainer struct {
-	Name string `json:"name"`
-	Age  int    `json:"age"`
-	City string `json:"city"`
+	ID   primitive.ObjectID `bson:"_id,omitempty"`
+	Name string             `json:"name,omitempty"`
+	Age  int                `json:"age,omitempty"`
+	City string             `json:"city,omitempty"`
 }
 
 func CreateTrainer(trainer Trainer) (err error) {
@@ -47,11 +48,44 @@ func GetAllTrainers() (results []*Trainer, err error) {
 	return results, nil
 }
 
-func GetTrainerById(id string) (trainer Trainer, err error) {
+func GetTrainerById(id string) (trainer *Trainer, err error) {
 	_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return trainer, err
 	}
 	Config.Trainers.FindOne(context.TODO(), bson.M{"_id": _id}).Decode(&trainer)
+	return trainer, nil
+}
+
+func UpdateTrainerById(id string, trainer Trainer) (updatedTrainer Trainer, err error) {
+	_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return trainer, err
+	}
+	fmt.Println("inside trainer: ", trainer)
+	updateValue := bson.M{}
+	if trainer.Name != "" {
+		fmt.Println("name")
+		updateValue["name"] = trainer.Name
+	}
+	if trainer.Age != 0 {
+		fmt.Println("age")
+		updateValue["age"] = trainer.Age
+	}
+	if trainer.City != "" {
+		fmt.Println("city")
+		updateValue["city"] = trainer.City
+	}
+	update := bson.M{
+		"$set": updateValue,
+	}
+	updateResult, err := Config.Trainers.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": _id},
+		update)
+	if err != nil {
+		return trainer, err
+	}
+	fmt.Println(updateResult.MatchedCount, updateResult.ModifiedCount)
 	return trainer, nil
 }

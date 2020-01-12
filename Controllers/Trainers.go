@@ -4,15 +4,15 @@ import (
 	"../Models"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 )
 
 /* POST /v1/trainer */
 func CreateTrainer(c *gin.Context) {
-	var trainer Models.Trainer
+	var trainer *Models.Trainer
 	c.BindJSON(&trainer)
-	fmt.Println(trainer)
 	if err := Models.CreateTrainer(trainer); err != nil {
 		log.Fatal(err)
 		c.AbortWithStatus(http.StatusNotFound)
@@ -43,10 +43,10 @@ func GetTrainer(c *gin.Context) {
 	}
 }
 
+/* PUT /v1/trainer/:id */
 func UpdateTrainer(c *gin.Context) {
-	var trainer Models.Trainer
+	var trainer *Models.Trainer
 	c.BindJSON(&trainer)
-	fmt.Println("outside trainer: ", trainer)
 	trainer, err := Models.UpdateTrainerById(c.Param("id"), trainer)
 	if err != nil {
 		log.Fatal(err)
@@ -57,11 +57,13 @@ func UpdateTrainer(c *gin.Context) {
 }
 
 func Test(c *gin.Context) {
-	test := struct {
-		Str string `json:"str"`
-		Num int    `json:"num"`
+	test := &struct {
+		Id  primitive.ObjectID `json:"id"`
+		Str string             `json:"str"`
+		Num int                `json:"num"`
 	}{}
-	c.BindJSON(&test)
+	c.BindJSON(test)
+	test.Id = primitive.NewObjectID()
 	fmt.Println(test)
 	//var trainer Models.Trainer
 	//c.BindJSON(&trainer)

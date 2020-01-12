@@ -3,7 +3,6 @@ package Models
 import (
 	"../Config"
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,12 +15,12 @@ type Trainer struct {
 	City string             `json:"city,omitempty"`
 }
 
-func CreateTrainer(trainer Trainer) (err error) {
-	insertResult, err := Config.Trainers.InsertOne(context.TODO(), trainer)
+func CreateTrainer(trainer *Trainer) (err error) {
+	trainer.ID = primitive.NewObjectID()
+	_, err = Config.Trainers.InsertOne(context.TODO(), trainer)
 	if err != nil {
 		return err
 	}
-	fmt.Println(insertResult)
 	return nil
 }
 
@@ -57,35 +56,33 @@ func GetTrainerById(id string) (trainer *Trainer, err error) {
 	return trainer, nil
 }
 
-func UpdateTrainerById(id string, trainer Trainer) (updatedTrainer Trainer, err error) {
+func UpdateTrainerById(id string, trainer *Trainer) (updatedTrainer *Trainer, err error) {
 	_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return trainer, err
 	}
-	fmt.Println("inside trainer: ", trainer)
 	updateValue := bson.M{}
 	if trainer.Name != "" {
-		fmt.Println("name")
 		updateValue["name"] = trainer.Name
 	}
 	if trainer.Age != 0 {
-		fmt.Println("age")
 		updateValue["age"] = trainer.Age
 	}
 	if trainer.City != "" {
-		fmt.Println("city")
 		updateValue["city"] = trainer.City
 	}
 	update := bson.M{
 		"$set": updateValue,
 	}
-	updateResult, err := Config.Trainers.UpdateOne(
+	after := options.After
+	result := Config.Trainers.FindOneAndUpdate(
 		context.TODO(),
 		bson.M{"_id": _id},
-		update)
+		update,
+		&options.FindOneAndUpdateOptions{ReturnDocument: &after})
+	err = result.Decode(&updatedTrainer)
 	if err != nil {
 		return trainer, err
 	}
-	fmt.Println(updateResult.MatchedCount, updateResult.ModifiedCount)
-	return trainer, nil
+	return updatedTrainer, nil
 }

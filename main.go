@@ -1,9 +1,16 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"./Config"
+	"./Routes"
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
 	r := gin.Default()
+	Config.ConnectDB()
+	defer Config.DisconnectDB()
+	Routes.SetupRouter(r)
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
